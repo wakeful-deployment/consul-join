@@ -43,4 +43,4 @@ JOINDNS=example.com consul-join -server
 
 We are considering adding a `JOINURL` and a related `consul-join-server`
 to provide a simple alternative to DNS for keeping track of consul
-server ips.
+server ips (similar to discovery.etcd.io).
