@@ -25,8 +25,18 @@ func joinIPArgs(ips []string) []string {
 	return acc
 }
 
-func resolveARecords(domain string) []string {
-	ips, err := net.LookupHost(domain)
+type Resolver interface {
+	LookupHost(host string) ([]string, error)
+}
+
+type resolver struct{}
+
+func (r resolver) LookupHost(host string) ([]string, error) {
+	return net.LookupHost(host)
+}
+
+func resolveARecords(res Resolver, domain string) []string {
+	ips, err := res.LookupHost(domain)
 
 	if err == nil {
 		return ips
@@ -48,27 +58,20 @@ func bootstrapExpectFromLookup(s string, exists bool) int64 {
 	return 3
 }
 
-func fullCommandArgs(joinArgs []string, bootstrapExpect int64) []string {
+func fullCommandArgs(joinArgs []string, bootstrapExpect int64, osArgs []string) []string {
 	commandArgs := []string{consul, "agent"}
-
-	var isServer = false
-	for _, arg := range os.Args {
-		if arg == "-server" {
-			isServer = true
-		}
-	}
-
-	if isServer {
-		commandArgs = append(commandArgs, fmt.Sprintf("-bootstrap-expect=%d", bootstrapExpect))
-	}
 
 	for _, joinArg := range joinArgs {
 		commandArgs = append(commandArgs, joinArg)
 	}
 
-	for index, arg := range os.Args {
+	for index, arg := range osArgs {
 		if index != 0 {
 			commandArgs = append(commandArgs, arg)
+		}
+
+		if arg == "-server" {
+			commandArgs = append(commandArgs, fmt.Sprintf("-bootstrap-expect=%d", bootstrapExpect))
 		}
 	}
 
@@ -102,6 +105,7 @@ func main() {
 	joinDNS, joinDNSExists := os.LookupEnv("JOINDNS")
 	bootstrapExpect := bootstrapExpectFromLookup(os.LookupEnv("BOOTSTRAP_EXPECT"))
 	_, debug := os.LookupEnv("DEBUG")
+	res := resolver{}
 
 	var args []string
 
@@ -113,11 +117,11 @@ func main() {
 	if joinIPExists {
 		args = []string{joinIPArg(joinIP)}
 	} else if joinDNSExists {
-		args = joinIPArgs(resolveARecords(joinDNS))
+		args = joinIPArgs(resolveARecords(res, joinDNS))
 	} else {
 		args = []string{}
 	}
 
-	runArgs := fullCommandArgs(args, bootstrapExpect)
+	runArgs := fullCommandArgs(args, bootstrapExpect, os.Args)
 	runCommand(runArgs, debug)
 }
