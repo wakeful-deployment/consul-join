@@ -58,8 +58,16 @@ func bootstrapExpectFromLookup(s string, exists bool) int64 {
 	return 3
 }
 
-func fullCommandArgs(joinArgs []string, bootstrapExpect int64, osArgs []string) []string {
+func fullCommandArgs(joinArgs []string, node string, advertise string, bootstrapExpect int64, osArgs []string) []string {
 	commandArgs := []string{consul, "agent"}
+
+	if node != "" {
+		commandArgs = append(commandArgs, fmt.Sprintf("-node=%s", node))
+	}
+
+	if advertise != "" {
+		commandArgs = append(commandArgs, fmt.Sprintf("-advertise=%s", advertise))
+	}
 
 	for _, joinArg := range joinArgs {
 		commandArgs = append(commandArgs, joinArg)
@@ -104,6 +112,8 @@ func main() {
 	joinIP, joinIPExists := os.LookupEnv("JOINIP")
 	joinDNS, joinDNSExists := os.LookupEnv("JOINDNS")
 	bootstrapExpect := bootstrapExpectFromLookup(os.LookupEnv("BOOTSTRAP_EXPECT"))
+	advertise, _ := os.LookupEnv("ADVERTISE")
+	node, _ := os.LookupEnv("NODE")
 	_, debug := os.LookupEnv("DEBUG")
 	res := resolver{}
 
@@ -122,6 +132,6 @@ func main() {
 		args = []string{}
 	}
 
-	runArgs := fullCommandArgs(args, bootstrapExpect, os.Args)
+	runArgs := fullCommandArgs(args, node, advertise, bootstrapExpect, os.Args)
 	runCommand(runArgs, debug)
 }
