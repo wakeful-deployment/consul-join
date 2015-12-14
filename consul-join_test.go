@@ -86,7 +86,30 @@ func TestFullArgsForServer(t *testing.T) {
 	bootstrap := int64(3)
 	osArgs := []string{"-server"}
 
-	result := fullCommandArgs(joinArgs, bootstrap, osArgs)
+	result := fullCommandArgs(joinArgs, "", "", bootstrap, osArgs)
+
+	matches := true
+	for index, arg := range result {
+		if expectation[index] != arg {
+			matches = false
+			break
+		}
+	}
+
+	if !matches {
+		t.Errorf("%v doesn't match %v", result, expectation)
+	}
+}
+
+func TestFullArgsForServerIncludingNodeAndAdvertise(t *testing.T) {
+	expectation := []string{"consul", "agent", "-node=foo", "-advertise=10.1.1.1", "-join=127.0.0.1", "-bootstrap-expect=3", "-server"}
+	joinArgs := []string{"-join=127.0.0.1"}
+	node := "foo"
+	advertise := "10.1.1.1"
+	bootstrap := int64(3)
+	osArgs := []string{"-server"}
+
+	result := fullCommandArgs(joinArgs, node, advertise, bootstrap, osArgs)
 
 	matches := true
 	for index, arg := range result {
@@ -107,7 +130,30 @@ func TestFullArgs(t *testing.T) {
 	bootstrap := int64(3)
 	osArgs := []string{}
 
-	result := fullCommandArgs(joinArgs, bootstrap, osArgs)
+	result := fullCommandArgs(joinArgs, "", "", bootstrap, osArgs)
+
+	matches := true
+	for index, arg := range result {
+		if expectation[index] != arg {
+			matches = false
+			break
+		}
+	}
+
+	if !matches {
+		t.Errorf("%v doesn't match %v", result, expectation)
+	}
+}
+
+func TestFullArgsIncludingNodeAndAdvertise(t *testing.T) {
+	expectation := []string{"consul", "agent", "-node=foo", "-advertise=10.1.1.1", "-join=127.0.0.1"}
+	joinArgs := []string{"-join=127.0.0.1"}
+	node := "foo"
+	advertise := "10.1.1.1"
+	bootstrap := int64(3)
+	osArgs := []string{}
+
+	result := fullCommandArgs(joinArgs, node, advertise, bootstrap, osArgs)
 
 	matches := true
 	for index, arg := range result {
